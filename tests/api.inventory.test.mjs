@@ -113,12 +113,20 @@ class MockDB {
         return { results: [] };
       },
       async first() {
+        if (normalized.includes('SELECT COUNT(*) AS COUNT FROM AREAS')) {
+          return { count: self.areas.length };
+        }
         if (normalized.includes("SELECT COUNT(*) AS COUNT FROM PURCHASE_REQUESTS")) {
           return { count: self.purchase_requests.length };
         }
         if (normalized.includes("SELECT ID FROM PURCHASE_REQUESTS WHERE STATUS = 'ABIERTA'")) {
           const open = [...self.purchase_requests].reverse().find(r => r.status === 'Abierta');
           return open ? { id: open.id } : undefined;
+        }
+        if (normalized.includes('FROM AREAS WHERE NAME =')) {
+          const name = this._bind ? this._bind[0] : undefined;
+          const row = self.areas.find(a => a.name === name);
+          return row ? { id: row.id, name: row.name } : undefined;
         }
         if (normalized.includes('SELECT * FROM PURCHASE_REQUESTS WHERE STATUS =')) {
           const b = this._bind || [];

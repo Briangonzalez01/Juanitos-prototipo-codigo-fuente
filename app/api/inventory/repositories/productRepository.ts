@@ -14,9 +14,15 @@ export async function findProductById(id: number, db?: any) {
     .first();
 }
 
-export async function listProducts(db?: any) {
+export async function listProducts(db?: any, areas?: string[]) {
   const d = database(db);
-  return d.prepare("SELECT p.*, COALESCE(i.current_quantity, 0) AS current_quantity FROM products p LEFT JOIN inventory i ON i.product_id = p.id ORDER BY p.area, p.name COLLATE NOCASE").all();
+  if (!areas || !areas.length) {
+    return d.prepare("SELECT p.*, COALESCE(i.current_quantity, 0) AS current_quantity FROM products p LEFT JOIN inventory i ON i.product_id = p.id ORDER BY p.area, p.name COLLATE NOCASE").all();
+  }
+  // Build placeholders for the IN clause
+  const placeholders = areas.map(() => "?").join(",");
+  const sql = `SELECT p.*, COALESCE(i.current_quantity, 0) AS current_quantity FROM products p LEFT JOIN inventory i ON i.product_id = p.id WHERE p.area IN (${placeholders}) ORDER BY p.area, p.name COLLATE NOCASE`;
+  return d.prepare(sql).bind(...areas).all();
 }
 
 export async function createProduct(data: {

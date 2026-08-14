@@ -69,6 +69,10 @@ class MockDB {
         return {};
       },
       async all() {
+        if (normalized.includes('SELECT DISTINCT AREA FROM PRODUCTS')) {
+          const set = Array.from(new Set(self.products.map(p => p.area).filter(Boolean)));
+          return { results: set.map(area => ({ area })) };
+        }
         if (normalized.includes('SELECT NAME, AREA FROM PRODUCTS')) return { results: self.products.map(p => ({ name: p.name, area: p.area })) };
         if (normalized.includes('SELECT P.*, COALESCE(I.CURRENT_QUANTITY')) {
           const rows = self.products.map(p => { const inv = self.inventory.find(i => i.product_id === p.id); return { ...p, current_quantity: inv ? inv.current_quantity : 0 }; });
@@ -84,6 +88,7 @@ class MockDB {
         return { results: [] };
       },
       async first() {
+        if (normalized.includes('SELECT COUNT(*) AS COUNT FROM AREAS')) return { count: self.areas.length };
         if (normalized.includes("SELECT COUNT(*) AS COUNT FROM PURCHASE_REQUESTS")) return { count: self.purchase_requests.length };
         if (normalized.includes("SELECT ID FROM PURCHASE_REQUESTS WHERE STATUS = 'ABIERTA'")) {
           const open = [...self.purchase_requests].reverse().find(r => r.status === 'Abierta');

@@ -42,7 +42,12 @@ export async function handleCreateProduct(payload: Record<string, unknown>) {
   const categoryId = payload.categoryId ? Number(payload.categoryId) : null;
   const groupId = payload.groupId ? Number(payload.groupId) : null;
   const quantity = payload.quantity == null ? 0 : Number(payload.quantity);
-  return inventoryService.createProduct({ name, area, unit, internalCode, provider, idealStock, imageUrl, categoryId, groupId, quantity, __db: (payload as any).__db });
+  // ensure area exists and use canonical name
+  const db = (payload as any).__db ?? env.DB;
+  if (!db) throw new Error("La base de datos no está disponible.");
+  const areaRow = await db.prepare("SELECT id, name FROM areas WHERE name = ?").bind(area).first();
+  if (!areaRow) throw new Error("AREA_NOT_FOUND");
+  return inventoryService.createProduct({ name, area: areaRow.name, unit, internalCode, provider, idealStock, imageUrl, categoryId, groupId, quantity, __db: (payload as any).__db });
 }
 
 export async function handleUpdateProduct(payload: Record<string, unknown>) {
@@ -57,7 +62,12 @@ export async function handleUpdateProduct(payload: Record<string, unknown>) {
   const imageUrl = typeof payload.imageUrl === "string" ? payload.imageUrl : null;
   const categoryId = payload.categoryId ? Number(payload.categoryId) : null;
   const groupId = payload.groupId ? Number(payload.groupId) : null;
-  return inventoryService.updateProductService({ id, name, area, unit, internalCode, provider, idealStock, imageUrl, categoryId, groupId, __db: (payload as any).__db });
+  // ensure area exists
+  const db = (payload as any).__db ?? env.DB;
+  if (!db) throw new Error("La base de datos no está disponible.");
+  const areaRow = await db.prepare("SELECT id, name FROM areas WHERE name = ?").bind(area).first();
+  if (!areaRow) throw new Error("AREA_NOT_FOUND");
+  return inventoryService.updateProductService({ id, name, area: areaRow.name, unit, internalCode, provider, idealStock, imageUrl, categoryId, groupId, __db: (payload as any).__db });
 }
 
 export async function handleCleanupTestProducts() {
